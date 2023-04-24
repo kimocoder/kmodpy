@@ -45,8 +45,7 @@ class Kmod(object):
         Generate currently loaded modules, use_count and sizes
         """
         klist = POINTER(kmod_list)()
-        err = kmod_module_new_from_loaded(self._kmod_ctx, byref(klist))
-        if err:
+        if err := kmod_module_new_from_loaded(self._kmod_ctx, byref(klist)):
             raise KmodError('Could not get loaded modules')
         itr = klist.contents.node.next
         while True:
@@ -84,8 +83,7 @@ class Kmod(object):
         itr = mlist.contents.node.next
         while True:
             itrnode = self.__container_of(itr.contents, kmod_list, "node")
-            mod = kmod_module_get_module(itrnode)
-            yield mod
+            yield kmod_module_get_module(itrnode)
             if addressof(mlist.contents) == addressof(itr.contents):
                 break
             itr = itr.contents.next
@@ -96,11 +94,11 @@ class Kmod(object):
         """
         mods = list(self.lookup(name))
         if not mods:
-            raise KmodError("Could not modinfo '%s'" % name)
+            raise KmodError(f"Could not modinfo '{name}'")
         ilist = POINTER(kmod_list)()
         err = kmod_module_get_info(mods[0], byref(ilist))
         if err < 0:
-            raise KmodError("Could not modinfo '%s'" % name)
+            raise KmodError(f"Could not modinfo '{name}'")
         if not ilist:
             return
         itr = ilist.contents.node.next
@@ -120,7 +118,7 @@ class Kmod(object):
         """
         mods = list(self.lookup(name))
         if not mods:
-            raise KmodError("Could not modprobe '%s'" % name)
+            raise KmodError(f"Could not modprobe '{name}'")
         flist = kmod_module_get_dependencies(mods[0])
         if not flist:
             return
@@ -128,8 +126,7 @@ class Kmod(object):
         while True:
             itrnode = self.__container_of(itr.contents, kmod_list, "node")
             m = kmod_module_get_module(itrnode)
-            name = kmod_module_get_name(m)
-            yield name
+            yield kmod_module_get_name(m)
             if addressof(flist.contents) == addressof(itr.contents):
                 break
             itr = itr.contents.next
@@ -154,7 +151,7 @@ class Kmod(object):
         """
         mods = list(self.lookup(name))
         if not mods and not quiet:
-            raise KmodError("Could not modprobe '%s'" % name)
+            raise KmodError(f"Could not modprobe '{name}'")
 
         for mod in mods:
             self.__insert(mod, *args, **kwargs)
@@ -163,6 +160,6 @@ class Kmod(object):
         "Remove module from current tree"
         mods = list(self.lookup(name))
         if not mods:
-            raise KmodError("Could not rmmod '%s'" % name)
+            raise KmodError(f"Could not rmmod '{name}'")
         for mod in mods:
             self.__remove(mod, *args, **kwargs)
